@@ -1,10 +1,9 @@
 # Contributing Guidelines
 
-This repository documents the complete development history of a systematic trading strategy. It is primarily an educational resource showing the evolution from exploration to production.
+This repository documents the complete development history of a systematic trading strategy.
 
 ## Repository Purpose
 
-**Educational:** Shows rigorous, scientific approach to strategy development
 **Historical:** Preserves all phases of research and discoveries
 **Practical:** Provides production-ready implementation
 
@@ -22,16 +21,6 @@ This repository documents the complete development history of a systematic tradi
 - **Phase 9:** Final solution (production-ready)
 
 ## Using This Work
-
-**For Learning:**
-- Study the phase-by-phase evolution
-- Understand why certain approaches failed
-- Learn importance of realistic testing (OHLC vs clip)
-
-**For Implementation:**
-- Review `outputs_phase9/PRODUCTION_SPEC.txt`
-- Read PROJECT_SUMMARY.md for context
-- Use phase9.py as reference implementation
 
 **For Research:**
 - All intermediate phases preserved
