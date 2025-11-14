@@ -1,0 +1,4 @@
+Phase,Trades,Avg_PnL,Accuracy,Total_PnL
+Phase 1 (Filters),75,0.076,45.3,5.74
+Phase 2 (ML All),134,-0.017,53.6,-1.81
+Phase 2.5 (Hybrid),75,0.2511418348158031,64.62121212121212,13.469705566970003

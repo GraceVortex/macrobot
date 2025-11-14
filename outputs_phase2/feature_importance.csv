@@ -1,0 +1,15 @@
+feature,importance
+momentum_5d,0.1263304
+vix_ma_20,0.119965516
+vix_change_20d,0.11378546
+vix,0.11080694
+fed_funds_rate,0.10156549
+vix_change_5d,0.09532469
+momentum_20d,0.07823873
+volatility_20,0.07764119
+fed_rate_change_3m,0.063916594
+rsi_14,0.05347964
+surprise_pct,0.03311927
+rating,0.025826022
+vix_above_20,0.0
+type_nfp,0.0

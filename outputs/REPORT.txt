@@ -1,0 +1,20 @@
+========================================================
+                    BASELINE ANALYSIS
+========================================================
+
+Summary: Initial exploration of macro event trading
+Status: Marginal profitability, needs improvement
+
+RESULTS
+-------
+- Strategy: Simple rule-based on event surprises
+- Sharpe: 0.49
+- Win Rate: 58%
+- Avg P&L: +0.12% per trade
+
+CONCLUSION
+----------
+Basic approach shows potential but insufficient edge.
+Led to Phase 1 improvements with filters.
+
+FILES: backtest_trades.csv, optimization_results.csv

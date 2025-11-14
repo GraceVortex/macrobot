@@ -1,0 +1,20 @@
+========================================================
+              PHASE 2 - MACHINE LEARNING
+========================================================
+
+Summary: Pure ML approach with XGBoost
+Status: Failed - worse than Phase 1
+
+RESULTS
+-------
+- Strategy: XGBoost classifier, 14 features
+- Sharpe: 0.30
+- Win Rate: 52%
+- Avg P&L: +0.08% per trade
+
+CONCLUSION
+----------
+Pure ML without filters performed poorly.
+Led to Phase 2.5 hybrid approach.
+
+FILES: ml_dataset.csv, feature_importance.csv, walk_forward_results.csv

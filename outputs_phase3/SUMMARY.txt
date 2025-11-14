@@ -1,0 +1,24 @@
+========================================================
+            PHASE 3 - LEVERAGED INSTRUMENTS
+========================================================
+
+Summary: Test Phase 2.5 strategy on leveraged ETFs
+Status: BREAKTHROUGH - Sharpe 3.14 achieved
+
+RESULTS
+-------
+TMF (3x Leveraged Treasury):
+- Trades: 53
+- Accuracy: 77.9%
+- Avg P&L: +1.98%
+- Sharpe: 3.14 ← Best performer
+
+IEF (1x): +0.18% avg
+TBT (2x inverse): -0.58% avg (failed)
+
+CONCLUSION
+----------
+Leverage amplifies edge when applied correctly.
+TMF is production candidate. Phase 3.5 adds cost tracking.
+
+FILES: tmf_all_trades.csv, leverage_comparison.csv

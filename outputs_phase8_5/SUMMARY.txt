@@ -1,0 +1,45 @@
+======================================================================
+PHASE 8.5 SUMMARY - PROFESSIONAL IMPROVEMENTS
+======================================================================
+
+KEY IMPROVEMENTS:
+1. Transaction costs scale with position size (cost proportional to multiplier)
+2. Position sizing -> stop order (fixed max loss 1.5%)
+3. OHLC-based realistic stops (using TMF daily bars)
+4. VIX percentile filter (>70th instead of threshold=20)
+
+======================================================================
+RESULTS
+======================================================================
+
+Baseline: Sharpe 0.84
+Best: ULTIMATE v2.0 - Sharpe -1.13
+
+                      label  trades    sharpe   avg_ret  win_rate  total_ret     max_dd  avg_mult
+ULTIMATE v2.0 (Simple Stop)      28  1.147152  3.682002 85.714286 103.096065  -1.816667  1.535714
+           VIX P70 + Strong      28  0.949410  2.805072 57.142857  57.887018  -5.669431  1.000000
+  Pos Sizing + Scaled Costs      53  0.890665  2.702931 73.584906 143.255354 -11.702938  1.408805
+                    VIX P70      30  0.885210  2.467500 53.333333  55.226958  -9.756982  1.000000
+                   Baseline      53  0.841556  1.736238 73.584906  92.020611 -10.516982  1.000000
+                Rating >= 3      47  0.826710  1.766861 68.085106  89.249556 -10.520196  1.000000
+             OHLC Stop 1.5%      53 -0.349856 -0.565796 18.867925 -29.987175 -48.328931  1.000000
+              ULTIMATE v2.0      28 -1.125443 -1.334434  7.142857 -37.364151 -37.364151  1.535714
+
+======================================================================
+IDEOLOGY DECISIONS
+======================================================================
+
+1. Stop-loss ideology: FIXED per-trade risk
+   - Position sizing applied BEFORE stop
+   - Max loss capped at 1.5% regardless of position size
+   - This is the conservative approach for risk management
+
+2. Stop implementation: OHLC-based (realistic)
+   - Uses TMF daily bars to check if intraday low hits stop
+   - More realistic than simple clipping
+   - Fallback to simple stop if OHLC unavailable
+
+3. Volatility filter: VIX percentile-based
+   - Uses 70th percentile instead of fixed threshold
+   - Adapts to changing volatility regimes
+

@@ -1,0 +1,21 @@
+========================================================
+          PHASE 4.5 - SELECTIVE EVENTS
+========================================================
+
+Summary: Carefully selected 5 events (NFP, CPI, GDP, Retail, PMI)
+Status: Profitable alternative to Phase 3
+
+RESULTS
+-------
+- Strategy: Phase 3 + selective high-quality events
+- Sharpe: 1.20
+- Win Rate: 64%
+- Avg P&L: +0.42% per trade
+- More trades than Phase 3 (diversification)
+
+CONCLUSION
+----------
+Quality > quantity for events.
+Valid alternative for more frequent trading.
+
+FILES: all_trades.csv, results.csv

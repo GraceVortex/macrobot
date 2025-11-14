@@ -1,0 +1,21 @@
+========================================================
+             PHASE 4 - EVENT EXPANSION
+========================================================
+
+Summary: Added more event types (GDP, Retail, PMI, etc.)
+Status: Failed - diluted performance
+
+RESULTS
+-------
+- Strategy: Phase 3 + 5 additional event types
+- Sharpe: 0.60
+- Win Rate: 57%
+- Avg P&L: +0.15% per trade
+
+CONCLUSION
+----------
+More events ≠ better performance.
+Many events lack predictive power.
+Led to Phase 4.5 selective approach.
+
+FILES: phase4_all_trades.csv, phase4_results.csv

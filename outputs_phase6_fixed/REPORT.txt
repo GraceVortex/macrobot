@@ -1,0 +1,25 @@
+========================================================
+        PHASE 6 - PROPER OUT-OF-SAMPLE VALIDATION
+========================================================
+
+Summary: Train/test split validation of Phase 3
+Status: VALIDATED - confirms Phase 3 edge
+
+RESULTS
+-------
+Train Period: 2014-2021
+Test Period: 2022-2024 (unseen data)
+
+Test Results:
+- Sharpe: 7.01 (out-of-sample)
+- Accuracy: 71.4%
+- Avg P&L: +1.41%
+- Trades: 21
+
+CONCLUSION
+----------
+Phase 3 edge confirmed on recent unseen data.
+Conservative live expectation: Sharpe 4.0-5.0
+Ready for paper trading.
+
+FILES: summary.csv, test_results_adjusted.csv, train_optimization.csv

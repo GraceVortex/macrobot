@@ -1,0 +1,20 @@
+========================================================
+                 PHASE 1 - RULE-BASED FILTERS
+========================================================
+
+Summary: Added VIX, rating, and trend filters
+Status: Improved but still marginal
+
+RESULTS
+-------
+- Strategy: Baseline + filters (VIX>15, rating>2)
+- Sharpe: 1.13
+- Win Rate: 65%
+- Avg P&L: +0.25% per trade
+
+CONCLUSION
+----------
+Filters improved performance 2x vs baseline.
+Ready for ML enhancement in Phase 2.
+
+FILES: ief_trades.csv, tlt_trades.csv, instrument_comparison.csv

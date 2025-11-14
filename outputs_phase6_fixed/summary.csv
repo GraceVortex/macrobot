@@ -1,0 +1,4 @@
+dataset,trades,best_stop,sharpe
+Train,32,2.0,9.084615409876678
+Test (Out-of-Sample),21,2.0,7.014788550640969
+Test (Adjusted for Intraday),21,2.0,-9.693781384886142

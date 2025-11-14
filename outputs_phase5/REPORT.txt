@@ -1,0 +1,21 @@
+========================================================
+            PHASE 5 - PORTFOLIO APPROACH
+========================================================
+
+Summary: Test portfolio combinations of strategies
+Status: Phase 3 alone still best
+
+RESULTS
+-------
+- Tested: Phase 3 only vs Phase 3+4.5 blend
+- Phase 3 alone: Sharpe 3.14
+- 50/50 blend: Sharpe 2.10
+- Phase 4.5 alone: Sharpe 1.20
+
+CONCLUSION
+----------
+Portfolio diversification reduces Sharpe.
+Phase 3 (TMF, NFP+CPI only) remains optimal.
+Stick with concentrated bet.
+
+FILES: allocation_comparison.csv, dynamic_portfolio.csv

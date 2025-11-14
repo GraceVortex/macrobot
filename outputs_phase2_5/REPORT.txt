@@ -1,0 +1,20 @@
+========================================================
+            PHASE 2.5 - HYBRID (FILTERS + ML)
+========================================================
+
+Summary: Combined rule filters with ML confidence
+Status: Profitable, foundation for Phase 3
+
+RESULTS
+-------
+- Strategy: Phase 1 filters + ML confidence >60%
+- Sharpe: 1.30
+- Win Rate: 69%
+- Avg P&L: +0.30% per trade
+
+CONCLUSION
+----------
+Hybrid approach best of both worlds.
+Ready for leverage testing in Phase 3.
+
+FILES: hybrid_results.csv, all_predictions.csv, phase_comparison.csv

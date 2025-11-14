@@ -1,0 +1,6 @@
+pandas>=2.3.3
+numpy>=2.3.4
+yfinance>=0.2.66
+fredapi>=0.5.2
+matplotlib>=3.10.7
+seaborn>=0.13.2
