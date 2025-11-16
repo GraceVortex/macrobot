@@ -1,0 +1,170 @@
+================================================================================
+PHASE 10.8: VIX FILTER RESULTS
+================================================================================
+
+HYPOTHESIS: VIX filter (skip if VIX < 15) improves performance by avoiding calm periods
+
+RESULT: ⚠️  MARGINAL (Score 1/3)
+- Small positive effect on average (+0.06 Sharpe)
+- Inconsistent across windows (4/9 improved, 5/9 worsened)
+- DID help with worst case (2016-2017)
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+VERDICT: ❌ NOT RECOMMENDED for production
+(but keep as optional tool for extreme calm markets)
+
+REASON:
+- VIX filter DOES avoid the 2016-2017 disaster
+- BUT also filters out some good trades
+- Net effect: MARGINAL improvement
+
+BETTER APPROACH:
+→ Trade all CPI events by default
+→ Use VIX < 12 (extreme calm) as warning flag
+→ Or accept occasional bad years as part of strategy
+
+================================================================================
+DETAILED RESULTS (9 WINDOWS)
+================================================================================
+
+Window                      Unfiltered  Filtered  Events  Improvement
+                            Sharpe      Sharpe    Traded  
+2010-2014 → 2015-2016       0.67        0.33      10/24   -0.34  ❌
+2011-2015 → 2016-2017      -0.78       -0.21       4/24   +0.57  ✅ BEST!
+2012-2016 → 2017-2018       0.61        1.66       7/24   +1.05  ✅ GREAT!
+2013-2017 → 2018-2019       1.25        0.52      13/24   -0.73  ❌
+2014-2018 → 2019-2020       0.07       -0.02      17/24   -0.09  ❌
+2015-2019 → 2020-2021       0.30        0.39      23/24   +0.08  ✅
+2016-2020 → 2021-2022       1.17        1.17      24/24    0.00  (no trades skipped)
+2017-2021 → 2022-2023       1.02        1.11      20/24   +0.09  ✅
+2018-2022 → 2023-2024       1.27        1.14      12/23   -0.13  ❌
+
+STATISTICS:
+Average improvement: +0.06 Sharpe
+Improved windows: 4/9 (44.4%)
+Worsened windows: 5/9 (55.6%)
+
+Total events tested: 215
+Traded with filter: 130 (60.5%)
+Skipped by filter: 83 (38.6%)
+
+Avg VIX when traded: 21.4
+Avg VIX when skipped: 12.7
+
+================================================================================
+WHY MARGINAL RESULTS?
+================================================================================
+
+PROBLEM: VIX filter is TOO CRUDE
+
+1. GOOD: Avoided 2016-2017 disaster
+   - Worst window -0.78 → -0.21 (improvement!)
+   - Skipped 19/24 low-VIX events
+
+2. BAD: Also skipped profitable low-VIX trades
+   - 2018-2019 window got WORSE (1.25 → 0.52)
+   - Some low-VIX days still had good CPI surprises
+
+3. MIXED: Inconsistent across periods
+   - Sometimes helps, sometimes hurts
+   - VIX < 15 is not a perfect regime indicator
+
+================================================================================
+ALTERNATIVE FILTERS TO CONSIDER
+================================================================================
+
+Instead of simple VIX threshold, consider:
+
+OPTION 1: Extreme VIX filter (VIX < 12)
+- Less aggressive
+- Only skip truly dead markets
+- Keep more trades
+
+OPTION 2: CPI Volatility filter
+recent_cpi_vol = std(last 6 CPI surprises)
+IF recent_cpi_vol < 0.2:
+    SKIP (CPI data not volatile)
+
+OPTION 3: Combo filter
+IF VIX < 12 AND recent_cpi_vol < 0.2:
+    SKIP (both calm)
+ELSE:
+    TRADE
+
+OPTION 4: No filter, accept bad years
+- Trade all CPI events
+- 2016-2017 was only 1 bad period in 15 years
+- Long-term still profitable (8/9 windows)
+
+================================================================================
+RECOMMENDATION
+================================================================================
+
+PRODUCTION CONFIG: NO VIX FILTER
+
+Reasons:
+1. Marginal improvement (+0.06 Sharpe) not worth complexity
+2. Filters out 40% of trades (reduces frequency)
+3. Inconsistent - sometimes hurts more than helps
+4. 2016-2017 was rare (1/9 windows)
+
+OPTIONAL: Use VIX as WARNING (not filter)
+- If VIX < 12 on CPI day → reduce position size 50%
+- Don't skip trade completely
+- Keeps exposure but hedges risk
+
+PAPER TRADING PLAN:
+→ Trade ALL CPI events (no filter)
+→ Track VIX on each trade day
+→ After 10 trades, evaluate:
+   - If most low-VIX trades lose → reconsider filter
+   - If low-VIX trades mixed → keep no filter
+
+================================================================================
+COMPARISON TO PHASE 10.7 (UNFILTERED)
+================================================================================
+
+Phase 10.7 (no filter):
+- Mean test Sharpe: 0.62
+- Median test Sharpe: 0.67
+- Positive windows: 8/9 (88.9%)
+- Trade frequency: 100%
+
+Phase 10.8 (VIX filter):
+- Mean test Sharpe: 0.68 (filtered only)
+- Improvement: +0.06 over unfiltered
+- Positive windows: 7/9 (77.8%)
+- Trade frequency: 60.5%
+
+TRADE-OFF:
+- Slightly better Sharpe (+0.06)
+- BUT 40% fewer trades
+- AND less consistent (7/9 vs 8/9)
+
+VERDICT: Not worth the trade-off
+
+================================================================================
+FINAL DECISION
+================================================================================
+
+✅ KEEP Phase 10.7 config (NO VIX FILTER)
+
+Conservative setup:
+- CPI only
+- 5-day hold
+- OHLC 3% stop
+- NO VIX filter
+- Accept occasional bad years (like 2016-2017)
+
+Expected:
+- Sharpe: 0.5-0.7 (includes bad periods)
+- Win rate: 40-50%
+- Frequency: ~12 trades/year
+- 1-2 bad years per decade
+
+Status: READY FOR PAPER TRADING (no VIX filter needed)
+
+================================================================================
