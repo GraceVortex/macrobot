@@ -1,0 +1,2 @@
+config,full_sharpe,train_sharpe,test_sharpe,conservative_sharpe_30pct,trades
+"CPI only, 5-day, OHLC 3%",0.8239083477059947,0.502184978065906,1.4436078349054515,0.5767358433941963,42

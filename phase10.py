@@ -115,7 +115,42 @@ def load_economic_events():
     print(f"  Event types: {events['Event_Type'].unique().tolist()}")
     print(f"  Date range: {events['Date'].min().date()} to {events['Date'].max().date()}")
     
+    # Validate event data
+    validate_events(events)
+    
     return events
+
+
+def validate_events(events):
+    """Validate event data quality"""
+    print("\nValidating event data...")
+    
+    # Check duplicates
+    dupes = events[events.duplicated(['Date', 'Event_Type'], keep=False)]
+    if len(dupes) > 0:
+        print(f"  WARNING: {len(dupes)} duplicate events found!")
+        print(dupes[['Date', 'Event_Type', 'Actual', 'Consensus']].head())
+    
+    # Check missing consensus
+    missing_consensus = events[events['Consensus'].isna()]
+    if len(missing_consensus) > 0:
+        print(f"  WARNING: {len(missing_consensus)} events missing consensus!")
+    
+    # Check zero consensus (division by zero risk)
+    zero_consensus = events[events['Consensus'] == 0]
+    if len(zero_consensus) > 0:
+        print(f"  WARNING: {len(zero_consensus)} events with zero consensus!")
+    
+    # Check outlier surprises
+    events_copy = events.copy()
+    events_copy['surprise_pct'] = ((events_copy['Actual'] - events_copy['Consensus']) / 
+                                    events_copy['Consensus'].replace(0, np.nan) * 100)
+    outliers = events_copy[abs(events_copy['surprise_pct']) > 50]
+    if len(outliers) > 0:
+        print(f"  WARNING: {len(outliers)} extreme outliers (>50% surprise):")
+        print(outliers[['Date', 'Event_Type', 'Actual', 'Consensus', 'surprise_pct']].to_string(index=False))
+    
+    print("  Validation complete")
 
 
 def merge_events_with_prices(events, tmf_ohlc):
@@ -210,14 +245,20 @@ def check_ohlc_stop(entry_price, stop_pct, high, low, direction):
     Returns:
         (stopped: bool, exit_price: float)
     """
+    SLIPPAGE_PCT = 0.1  # 0.1% slippage on stop execution
+    
     if direction == 1:  # Long position
         stop_price = entry_price * (1 - stop_pct / 100)
         if low <= stop_price:
-            return True, stop_price
+            # Exit with slippage (worse than stop price)
+            exit_price = stop_price * (1 - SLIPPAGE_PCT / 100)
+            return True, exit_price
     else:  # Short position
         stop_price = entry_price * (1 + stop_pct / 100)
         if high >= stop_price:
-            return True, stop_price
+            # Exit with slippage (worse than stop price)
+            exit_price = stop_price * (1 + SLIPPAGE_PCT / 100)
+            return True, exit_price
     
     return False, None
 
@@ -243,24 +284,29 @@ def check_close_stop(entry_price, stop_pct, close_price, direction):
 # ============================================================================
 
 def backtest_strategy(merged_df, tmf_ohlc, holding_days=2, stop_type='none', stop_pct=0, 
-                     thresholds=None, position_size=1.0):
+                     thresholds=None, position_size=1.0, test_start_date=None):
     """
     Backtest multi-event macro strategy
     
     Args:
         merged_df: Merged events + prices
         tmf_ohlc: TMF OHLC dataframe
-        holding_days: How many days to hold (1, 2, or 5)
+        holding_days: How many FULL days to hold (1=exit day 1, 2=exit day 2, etc.)
         stop_type: 'none', 'ohlc', 'close', 'atr'
         stop_pct: Stop loss percentage
         thresholds: Dict of event thresholds
         position_size: Position multiplier for costs
+        test_start_date: If provided, only trade from this date (for train/test split)
     
     Returns:
         trades: DataFrame with all trades
     """
     if thresholds is None:
         thresholds = EVENT_THRESHOLDS
+    
+    # Apply test filter if provided
+    if test_start_date:
+        merged_df = merged_df[merged_df['entry_date'] >= test_start_date].copy()
     
     trades = []
     
@@ -280,7 +326,8 @@ def backtest_strategy(merged_df, tmf_ohlc, holding_days=2, stop_type='none', sto
         # Find exit date (holding_days later)
         future_data = tmf_ohlc[tmf_ohlc.index > entry_date]
         
-        if len(future_data) < holding_days:
+        # Need holding_days + 1 bars (day 0 entry, day 1..N for holding, day N+1 for exit at open)
+        if len(future_data) <= holding_days:
             continue  # Not enough future data
         
         # Check for stop hit during holding period
@@ -288,7 +335,13 @@ def backtest_strategy(merged_df, tmf_ohlc, holding_days=2, stop_type='none', sto
         exit_price = None
         exit_date = None
         
-        for i in range(holding_days):
+        # CRITICAL FIX: Start checking stops from day 1, not day 0
+        # Day 0 = entry day at open, can't check intraday stop
+        # Days 1..holding_days = check for stops
+        for i in range(1, holding_days + 1):
+            if i >= len(future_data):
+                break
+            
             bar = future_data.iloc[i]
             bar_date = bar.name
             
@@ -307,10 +360,11 @@ def backtest_strategy(merged_df, tmf_ohlc, holding_days=2, stop_type='none', sto
                     exit_date = bar_date
                     break
         
-        # If not stopped, exit at holding_days close
+        # If not stopped, exit at Open of day (holding_days + 1)
+        # FIX: Use Open-to-Open for consistency, and correct holding period
         if not stopped:
-            exit_bar = future_data.iloc[holding_days - 1]
-            exit_price = exit_bar['Close']
+            exit_bar = future_data.iloc[holding_days]  # Exit day = holding_days (not holding_days - 1)
+            exit_price = exit_bar['Open']  # Exit at Open, not Close
             exit_date = exit_bar.name
         
         # Calculate P&L
@@ -363,9 +417,17 @@ def calculate_metrics(trades_df, label="Strategy"):
     avg_return = returns.mean()
     total_return = returns.sum()
     
-    # Sharpe ratio (annualized, assuming ~50 trades/year)
+    # Sharpe ratio (annualized)
+    # FIX: Calculate actual trades per year, not assume 50
+    if len(trades_df) > 1:
+        date_range_days = (trades_df['entry_date'].max() - trades_df['entry_date'].min()).days
+        years = max(date_range_days / 365.25, 1.0)  # At least 1 year
+        trades_per_year = total_trades / years
+    else:
+        trades_per_year = 30  # Default conservative estimate
+    
     if returns.std() > 0:
-        sharpe = returns.mean() / returns.std() * np.sqrt(50)  # ~50 events/year
+        sharpe = returns.mean() / returns.std() * np.sqrt(trades_per_year)
     else:
         sharpe = 0
     
@@ -462,10 +524,13 @@ def block_b_stops(merged_df, tmf_ohlc):
     print()
     
     results = []
+    all_trades = []  # Save ALL trades for detailed analysis
     
     # No stop baseline
     print("Baseline: No stop")
     trades = backtest_strategy(merged_df, tmf_ohlc, holding_days=2, stop_type='none')
+    trades['config'] = 'No stop'
+    all_trades.append(trades)
     metrics = calculate_metrics(trades, "No stop (2d)")
     if metrics:
         results.append(metrics)
@@ -476,6 +541,8 @@ def block_b_stops(merged_df, tmf_ohlc):
         print(f"OHLC stop: {stop_pct}%")
         trades = backtest_strategy(merged_df, tmf_ohlc, holding_days=2, 
                                    stop_type='ohlc', stop_pct=stop_pct)
+        trades['config'] = f'OHLC stop {stop_pct}%'
+        all_trades.append(trades)
         metrics = calculate_metrics(trades, f"OHLC stop {stop_pct}% (2d)")
         if metrics:
             results.append(metrics)
@@ -486,10 +553,18 @@ def block_b_stops(merged_df, tmf_ohlc):
         print(f"Close stop: {stop_pct}%")
         trades = backtest_strategy(merged_df, tmf_ohlc, holding_days=2, 
                                    stop_type='close', stop_pct=stop_pct)
+        trades['config'] = f'Close stop {stop_pct}%'
+        all_trades.append(trades)
         metrics = calculate_metrics(trades, f"Close stop {stop_pct}% (2d)")
         if metrics:
             results.append(metrics)
             print(f"  Sharpe: {metrics['sharpe']:.2f}, Win%: {metrics['win_rate']:.1f}, Stopped: {metrics['stopped_rate']:.1f}%")
+    
+    # Save all individual trades for analysis
+    if len(all_trades) > 0:
+        all_trades_df = pd.concat(all_trades, ignore_index=True)
+        all_trades_df.to_csv(f'{OUTPUT_DIR}/all_trades_block_b.csv', index=False)
+        print(f"  Saved {len(all_trades_df)} individual trades to all_trades_block_b.csv")
     
     print()
     return pd.DataFrame(results)
@@ -549,6 +624,78 @@ def block_d_holding_periods(merged_df, tmf_ohlc):
     return pd.DataFrame(results)
 
 
+def block_e_regime_analysis(merged_df, tmf_ohlc):
+    """BLOCK E: Regime analysis (by year, train/test split)"""
+    print("=" * 80)
+    print("BLOCK E: REGIME ANALYSIS & TRAIN/TEST SPLIT")
+    print("=" * 80)
+    print()
+    
+    results = []
+    
+    # Extract year from entry_date
+    merged_df_copy = merged_df.copy()
+    merged_df_copy['year'] = pd.to_datetime(merged_df_copy['entry_date']).dt.year
+    
+    # Yearly analysis
+    print("Yearly Performance:")
+    print("-" * 80)
+    
+    years = sorted(merged_df_copy['year'].unique())
+    for year in years:
+        year_data = merged_df_copy[merged_df_copy['year'] == year]
+        
+        if len(year_data) < 3:
+            print(f"{year}: SKIP (only {len(year_data)} events)")
+            continue
+        
+        trades = backtest_strategy(year_data, tmf_ohlc, holding_days=2, stop_type='none')
+        metrics = calculate_metrics(trades, f"Year {year}")
+        
+        if metrics:
+            metrics['year'] = year
+            results.append(metrics)
+            print(f"{year}: Trades {metrics['trades']:3d}, Sharpe {metrics['sharpe']:+.2f}, Win {metrics['win_rate']:.1f}%, Total {metrics['total_return']:+.1f}%")
+    
+    print()
+    
+    # Train/Test split
+    print("Train/Test Split:")
+    print("-" * 80)
+    
+    # Train: 2020-2022, Test: 2023-2024
+    train_data = merged_df_copy[merged_df_copy['year'] <= 2022]
+    test_data = merged_df_copy[merged_df_copy['year'] >= 2023]
+    
+    print(f"Train period: 2020-2022 ({len(train_data)} events)")
+    trades_train = backtest_strategy(train_data, tmf_ohlc, holding_days=2, stop_type='ohlc', stop_pct=2)
+    metrics_train = calculate_metrics(trades_train, "Train (2020-2022)")
+    if metrics_train:
+        metrics_train['period'] = 'train'
+        results.append(metrics_train)
+        print(f"  Sharpe: {metrics_train['sharpe']:.2f}, Win%: {metrics_train['win_rate']:.1f}, Total: {metrics_train['total_return']:+.1f}%")
+    
+    print(f"\nTest period: 2023-2024 ({len(test_data)} events)")
+    trades_test = backtest_strategy(test_data, tmf_ohlc, holding_days=2, stop_type='ohlc', stop_pct=2)
+    metrics_test = calculate_metrics(trades_test, "Test (2023-2024)")
+    if metrics_test:
+        metrics_test['period'] = 'test'
+        results.append(metrics_test)
+        print(f"  Sharpe: {metrics_test['sharpe']:.2f}, Win%: {metrics_test['win_rate']:.1f}, Total: {metrics_test['total_return']:+.1f}%")
+    
+    print()
+    
+    if metrics_train and metrics_test:
+        print("TRAIN/TEST COMPARISON:")
+        print(f"  Train Sharpe: {metrics_train['sharpe']:.2f}")
+        print(f"  Test Sharpe:  {metrics_test['sharpe']:.2f}")
+        if abs(metrics_train['sharpe'] - metrics_test['sharpe']) > 0.5:
+            print("  WARNING: Large train/test Sharpe difference - possible overfitting!")
+        print()
+    
+    return pd.DataFrame(results)
+
+
 # ============================================================================
 # MAIN
 # ============================================================================
@@ -604,6 +751,10 @@ def main():
     results_d = block_d_holding_periods(merged_df, tmf_ohlc)
     results_d.to_csv(f'{OUTPUT_DIR}/block_d_periods.csv', index=False)
     
+    # Block E: Regime analysis & train/test split
+    results_e = block_e_regime_analysis(merged_df, tmf_ohlc)
+    results_e.to_csv(f'{OUTPUT_DIR}/block_e_regime.csv', index=False)
+    
     # Step 5: Summary
     print("=" * 80)
     print("PHASE 10 COMPLETE")
@@ -617,12 +768,22 @@ def main():
     print(f"  {OUTPUT_DIR}/block_b_stops.csv")
     print(f"  {OUTPUT_DIR}/block_c_events.csv")
     print(f"  {OUTPUT_DIR}/block_d_periods.csv")
+    print(f"  {OUTPUT_DIR}/block_e_regime.csv")
+    print(f"  {OUTPUT_DIR}/all_trades_block_b.csv (individual trades)")
+    print()
+    print("CRITICAL FIXES APPLIED:")
+    print("  1. Stop check timing - starts from day 1, not day 0")
+    print("  2. Entry/exit consistency - Open-to-Open")
+    print("  3. Holding period corrected - 2-day = truly 2 days")
+    print("  4. Stop slippage added - 0.1%")
+    print("  5. Sharpe calculation - uses actual trades/year")
+    print("  6. Train/test split - 2020-2022 vs 2023-2024")
     print()
     print("Next steps:")
-    print("1. Review block results")
-    print("2. Fill in more economic events data")
-    print("3. Analyze which events/configurations work best")
-    print("4. Generate final SUMMARY.txt if strategy is promising")
+    print("1. Review block_e_regime.csv for train/test comparison")
+    print("2. Check all_trades_block_b.csv to see which trades stopped")
+    print("3. Compare results to Phase 10 v1 (before bug fixes)")
+    print("4. Generate SUMMARY.txt if results still promising")
     print()
 
 
