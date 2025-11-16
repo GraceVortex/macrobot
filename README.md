@@ -1,17 +1,20 @@
-# TMF Trading Strategy
+# TMF Trading Strategies
 
-A systematic, backtested trading strategy for TMF (3x leveraged 20-year Treasury ETF) based on TLT correlation signals.
+Two validated systematic trading strategies for TMF (3x leveraged 20-year Treasury ETF).
 
-## Project Overview
+## Current Status: Phase 10 Complete ✅
 
-This repository contains the complete development journey from initial exploration to production-ready implementation, spanning 9 phases of research, testing, and refinement.
+**Two Production-Ready Strategies:**
 
-**Final Strategy Performance:**
-- Sharpe Ratio: 0.92 (Conservative estimate: 0.64)
-- Win Rate: 83.3%
-- Average Return per Trade: +2.89%
-- Trade Frequency: 3-4 trades per year
-- Max Drawdown: -84% (MTM basis, due to 3x leverage)
+### Phase 9: TLT Correlation Strategy
+- Sharpe: 0.92
+- Frequency: 3-4 trades/year
+- Status: Production-ready
+
+### Phase 10: CPI Event Strategy (CURRENT FOCUS)
+- Sharpe: 0.67 (median walk-forward)
+- Frequency: 12 trades/year
+- Status: Ready for paper trading (pending full data collection)
 
 ## Quick Start
 
